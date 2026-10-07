@@ -135,6 +135,12 @@ $hashBytes = [kec]::Hash($randomBytes, 28)
 $hashHex = ([BitConverter]::ToString($hashBytes)) -replace '-', ''
 $hashHex = $hashHex.ToLower()
 
+1..120 | ForEach-Object {
+    $bytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    [Convert]::ToBase64String($bytes)
+}
+
 @"
 NOT YOUR LANGUAGE? USE https://translate.google.com
 
